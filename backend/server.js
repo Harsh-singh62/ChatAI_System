@@ -9,58 +9,57 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
 // ==========================================
-// 1. ENVIRONMENT VARIABLES CONFIGURATION
+// ENVIRONMENT VARIABLES
 // ==========================================
 dotenv.config();
 
 // ==========================================
-// 2. IMPORT API ROUTES
+// IMPORT ROUTES
 // ==========================================
 import authRoutes from './routes/authRoutes.js';
 import conversationRoutes from './routes/conversationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 
 // ==========================================
-// 3. PATH CONFIGURATION
+// PATH CONFIGURATION
 // ==========================================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectRoot = path.resolve(__dirname, '../');
-const frontendRoot = path.join(projectRoot, 'frontend');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ==========================================
-// 4. CLOUDINARY CONFIG CHECK
+// CLOUDINARY ENV CHECK
 // ==========================================
 console.log('Cloudinary API Key:', process.env.CLOUDINARY_API_KEY ? 'Loaded ✅' : 'Missing ❌');
 console.log('Cloudinary Cloud Name:', process.env.CLOUDINARY_CLOUD_NAME ? 'Loaded ✅' : 'Missing ❌');
 console.log('Cloudinary API Secret:', process.env.CLOUDINARY_API_SECRET ? 'Loaded ✅' : 'Missing ❌');
 
 // ==========================================
-// 5. GLOBAL MIDDLEWARE
+// MIDDLEWARE
 // ==========================================
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // ==========================================
-// 6. API ROUTES
+// API ROUTES
 // ==========================================
 app.use('/api/auth', authRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/conversations', chatRoutes);
 
 // ==========================================
-// 7. SERVER INITIALIZATION & MODES
+// START SERVER FUNCTION
 // ==========================================
 async function startServer() {
-  
-  // Database Connection
+
+  // 1. MONGODB CONNECTION
   try {
     if (!process.env.MONGO_URI) {
-      throw new Error('MONGO_URI is missing in environment variables');
+      throw new Error('MONGO_URI is missing in .env');
     }
 
     await mongoose.connect(process.env.MONGO_URI);
@@ -71,14 +70,14 @@ async function startServer() {
     process.exit(1);
   }
 
-  // Development Mode (Vite Middleware Integration)
+  // 2. DEVELOPMENT MODE (Vite Integration)
   if (process.env.NODE_ENV !== 'production') {
     console.log('Running in DEVELOPMENT mode 🛠️');
 
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
-      root: frontendRoot
+      root: projectRoot
     });
 
     app.use(vite.middlewares);
@@ -86,7 +85,7 @@ async function startServer() {
     app.use('*', async (req, res, next) => {
       try {
         const url = req.originalUrl;
-        let template = fs.readFileSync(path.resolve(frontendRoot, 'index.html'), 'utf-8');
+        let template = fs.readFileSync(path.resolve(projectRoot, 'index.html'), 'utf-8');
         
         template = await vite.transformIndexHtml(url, template);
 
@@ -96,13 +95,12 @@ async function startServer() {
         next(e);
       }
     });
-
   } 
-  // Production Mode (Serving Built Frontend Static Files)
+  // 3. PRODUCTION MODE (Serving Built Static Files)
   else {
     console.log('Running in PRODUCTION mode 📦');
 
-    const distPath = path.join(frontendRoot, 'dist');
+    const distPath = path.join(projectRoot, 'dist');
 
     app.use(express.static(distPath));
 
@@ -111,11 +109,13 @@ async function startServer() {
     });
   }
 
-  // Start Listening
+  // 4. START LISTENING
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT} 🌐`);
   });
 }
 
-// Run the server setup
+// ==========================================
+// RUN SERVER
+// ==========================================
 startServer();
