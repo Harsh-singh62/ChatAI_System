@@ -34,7 +34,6 @@ export const getConversationById = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // 👇 NAYA SAFETY CHECK: Agar ID 'undefined' ya invalid MongoDB ObjectId ho toh yahin rok dein
     if (!id || id === 'undefined' || id === 'null' || !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'Invalid conversation ID' });
     }
@@ -88,7 +87,7 @@ export const updateConversation = async (req, res) => {
   }
 };
 
-// 5. Delete conversation and its associated messages
+// 5. Delete single conversation and its associated messages
 export const deleteConversation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -103,12 +102,55 @@ export const deleteConversation = async (req, res) => {
       return res.status(404).json({ error: 'Conversation not found' });
     }
 
-    // Delete all messages associated with this chat
     await Message.deleteMany({ conversationId: id });
 
     res.json({ message: 'Conversation deleted successfully' });
   } catch (error) {
     console.error('Delete Conversation Error:', error);
     res.status(500).json({ error: 'Failed to delete conversation' });
+  }
+};
+
+// 6. Delete ALL conversations and their messages for the logged-in user
+export const deleteAllConversations = async (req, res) => {
+  try {
+    const userConversations = await Conversation.find({ userId: req.user.id });
+    const conversationIds = userConversations.map(c => c._id);
+
+    await Message.deleteMany({ conversationId: { $in: conversationIds } });
+    await Conversation.deleteMany({ userId: req.user.id });
+
+    res.json({ message: 'All conversation history deleted successfully' });
+  } catch (error) {
+    console.error('Delete All Conversations Error:', error);
+    res.status(500).json({ error: 'Failed to delete all conversations' });
+  }
+};
+
+// 🔹 7. NEW: Export all conversations along with User and AI messages
+export const exportConversations = async (req, res) => {
+  try {
+    const conversations = await Conversation.find({ userId: req.user.id }).sort({ updatedAt: -1 });
+    
+    const fullData = await Promise.all(
+      conversations.map(async (conv) => {
+        const messages = await Message.find({ conversationId: conv._id }).sort({ createdAt: 1 });
+        return {
+          title: conv.title,
+          createdAt: conv.createdAt,
+          updatedAt: conv.updatedAt,
+          messages: messages.map(msg => ({
+            sender: msg.sender, // 'user' ya 'ai'
+            content: msg.content,
+            timestamp: msg.createdAt
+          }))
+        };
+      })
+    );
+
+    res.json(fullData);
+  } catch (error) {
+    console.error('Export Conversations Error:', error);
+    res.status(500).json({ error: 'Failed to export conversations' });
   }
 };

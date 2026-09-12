@@ -34,20 +34,20 @@ const PORT = process.env.PORT || 3000;
 // CLOUDINARY ENV CHECK
 // ==========================================
 // Sirf check ke liye — actual values print nahi karenge
-console.log(
-  'Cloudinary API Key:',
-  process.env.CLOUDINARY_API_KEY ? 'Loaded ✅' : 'Missing ❌'
-);
+// console.log(
+//   'Cloudinary API Key:',
+//   process.env.CLOUDINARY_API_KEY ? 'Loaded ✅' : 'Missing ❌'
+// );
 
-console.log(
-  'Cloudinary Cloud Name:',
-  process.env.CLOUDINARY_CLOUD_NAME ? 'Loaded ✅' : 'Missing ❌'
-);
+// console.log(
+//   'Cloudinary Cloud Name:',
+//   process.env.CLOUDINARY_CLOUD_NAME ? 'Loaded ✅' : 'Missing ❌'
+// );
 
-console.log(
-  'Cloudinary API Secret:',
-  process.env.CLOUDINARY_API_SECRET ? 'Loaded ✅' : 'Missing ❌'
-);
+// console.log(
+//   'Cloudinary API Secret:',
+//   process.env.CLOUDINARY_API_SECRET ? 'Loaded ✅' : 'Missing ❌'
+// );
 
 // ==========================================
 // MIDDLEWARE
